@@ -20,4 +20,16 @@
         <div class="navbar-header">
           <a class="navbar-brand" href=".">Coq.io</a>
         </div>
+        <div class="collapse navbar-collapse">
+          <%
+            tabs = [
+              [:getting_started, "Getting started", "getting_started.html"],
+              [:documentation, "Documentation", "documentation.html"]]
+          %>
+          <ul class="nav navbar-nav">
+            <% for id, title, link in tabs %>
+            <li<%= ' class="active"' if tab == id %>><a href="<%= u(link) %>"><%= h(title) %></a></li>
+            <% end %>
+          </ul>
+        </div>
       </div>

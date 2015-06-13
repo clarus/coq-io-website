@@ -5,7 +5,7 @@ def render_erb(file_name, binding)
   ERB.new(File.read(file_name, encoding: "UTF-8")).result(binding)
 end
 
-def header
+def header(tab)
   render_erb("templates/header.html.erb", binding)
 end
 
