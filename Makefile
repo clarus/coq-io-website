@@ -1,2 +1,8 @@
+all:
+	ruby make.rb
+
+clean:
+	rm output/*.html
+
 serve:
-	ruby -run -e httpd . -p 8000
+	ruby -run -e httpd output -p 8000
