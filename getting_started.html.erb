@@ -29,9 +29,22 @@ Extraction "extraction/main" main.</pre>
 ./main.native</pre>
           <p>This should display <code>Hello world!</code> on the terminal.</p>
 
-          <h2>The effects system</h2>
-
           <h2>More examples</h2>
+          <p>The full documentation of the <code>coq:io:system</code> library is available on <em>TODO</em>.</p>
+          <p>The following program reads a name on the command line and answers hello to this name:</p>
+          <pre>(** Ask for the user name and answer hello. *)
+Definition your_name (argv : list LString.t) : C.t System.effect unit :=
+  do! System.log (LString.s "What is your name?") in
+  let! name := System.read_line in
+  match name with
+  | None => ret tt
+  | Some name => System.log (LString.s "Hello " ++ name ++ LString.s "!")
+  end.</pre>
+          <p>We see here how to compose impure computations in sequence with the <code>do!</code> and <code>let!</code> keywords. The construct:</p>
+          <pre>let! x := e1 in e2</pre>
+          <p>executes <code>e1</code>, assigns the result to <code>x</code> and then executes <code>e2</code>. The <code>do!</code> is a syntactic sugar for a <code>let!</code> with an empty variable name. We use the <code>System.read_line</code> function which gets a new line on the standard input. If the <code>read_line</code> operation fails we returns the pure value <code>tt</code> of type <code>unit</code> using the <code>ret</code> operator, else we print the user name on the terminal. We run this program as before by compilation to OCaml.</p>
+
+          <h2>The effects system</h2>
 
           <h2>Use concurrency</h2>
 
