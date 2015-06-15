@@ -7,6 +7,27 @@
           This will install the main library <code>coq:io</code> and some basic effects <code>coq:io:system</code> to interact with your operating system.
 
           <h2>Write a Hello World</h2>
+          Open your favorite <a href="https://coq.inria.fr/">Coq</a> editor and type:
+          <pre>Require Import Coq.Lists.List.
+Require Import Io.All.
+Require Import Io.System.All.
+Require Import ListString.All.
+
+Import ListNotations.
+Import C.Notations.
+
+(** The classic Hello World program. *)
+Definition hello_world (argv : list LString.t) : C.t System.effect unit :=
+  System.log (LString.s "Hello world!").</pre>
+          <p>We load some libraries and write the <code>hello_world</code> program by calling the <code>System.log</code> function to print a message on the terminal. The return type of the program is <code>C.t System.effects unit</code>, which means this is an <em>impure</em> computation with <em>system</em> effects and returning a value of type <code>unit</code>. The impure computations are the computations which are not purely functional, in the sense they do some IO or modify a state variable for example. The command line arguments are given by the list of strings <code>argv</code>, but not used here.</p>
+
+          <p>To compile the <code>hello_world</code> program, add the lines:</p>
+          <pre>Definition main := Extraction.launch hello_world.
+Extraction "extraction/main" main.</pre>
+          <p>to generate an <a href="https://ocaml.org/">OCaml</a> file <code>main.ml</code>. We compile and run this file with:</p>
+          <pre>ocamlbuild main.native -use-ocamlfind -package io-system
+./main.native</pre>
+          <p>This should display <code>Hello world!</code> on the terminal.</p>
 
           <h2>The effects system</h2>
 
