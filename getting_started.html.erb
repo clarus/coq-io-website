@@ -31,6 +31,8 @@ Extraction "extraction/main" main.</pre>
 
           <h2>More examples</h2>
           <p>The full documentation of the <code>coq:io:system</code> library is available on <em>TODO</em>.</p>
+
+          <h3>Your name</h3>
           <p>The following program reads a name on the command line and answers hello to this name:</p>
           <pre>(** Ask for the user name and answer hello. *)
 Definition your_name (argv : list LString.t) : C.t System.effect unit :=
@@ -43,6 +45,37 @@ Definition your_name (argv : list LString.t) : C.t System.effect unit :=
           <p>We see here how to compose impure computations in sequence with the <code>do!</code> and <code>let!</code> keywords. The construct:</p>
           <pre>let! x := e1 in e2</pre>
           <p>executes <code>e1</code>, assigns the result to <code>x</code> and then executes <code>e2</code>. The <code>do!</code> is a syntactic sugar for a <code>let!</code> with an empty variable name. We use the <code>System.read_line</code> function which gets a new line on the standard input. If the <code>read_line</code> operation fails we returns the pure value <code>tt</code> of type <code>unit</code> using the <code>ret</code> operator, else we print the user name on the terminal. We run this program as before by compilation to OCaml.</p>
+
+          <h3>Cat</h3>
+          <p>This program opens a file and write its content:</p>
+          <pre>(** Display the content of a file. *)
+Definition cat (argv : list LString.t) : C.t System.effect unit :=
+  match argv with
+  | [_; file_name] =>
+    let! content := System.read_file file_name in
+    match content with
+    | None => System.log (LString.s "Cannot read the file.")
+    | Some content => System.log content
+    end
+  | _ => System.log (LString.s "Expected one parameter.")
+  end.</pre>
+        <p>It is analogous to the <code>cat</code> Unix command. It uses the command line argument to get the file name to display, and then read the file with <code>System.read_file</code>.</p>
+
+          <h3>Uname</h3>
+          <p>This program wrap the <code>uname</code> command to display the operating system kind and the type of machine:</p>
+          <pre>Require Import Coq.ZArith.ZArith.
+
+(** A wrapper for the `uname` command. *)
+Definition uname (argv : list LString.t) : C.t System.effect unit :=
+  let! os := System.eval [LString.s "uname"; LString.s "-o"] in
+  let! machine := System.eval [LString.s "uname"; LString.s "-m"] in
+  match (os , machine) with
+  | (Some (0%Z, os, _), Some (0%Z, machine, _)) =>
+    do! System.log (LString.s "OS: " ++ LString.trim os) in
+    System.log (LString.s "Machine: " ++ LString.trim machine)
+  | _ => ret tt
+  end.</pre>
+        <p>We use the command <code>System.eval</code> to evaluate a command and get its status code and output. If the two <code>uname</code> calls are successful, we retrieve the OS and machine names and display them. The <code>0%Z</code> stands for the zero in the type <code>Z</code> of the relative integers. A null value means by convention that the commands were successful.</p>
 
           <h2>The effects system</h2>
 
