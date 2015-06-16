@@ -294,9 +294,18 @@ Run.t
   apply (Run.log_ok (_ ++ name ++ _)).
 Defined.</pre>
           <p>This run is the Coq formalization of our use case for the valid executions of the computation <code>your_name</code>.</p>
+          <p>As another example, here is the formalization of the use case in which the <code>System.read_line</code> command fails (because of a terminal error for instance):</p>
+          <pre>Definition run_your_name_error (argv : list LString.t)
+  : Run.t (your_name argv) tt.
+  eapply Run.Let.
+  apply (Run.log_ok (LString.s "What is your name?")).
+  eapply Run.Let.
+  apply Run.read_line_error.
+  apply Run.Ret.
+Defined.</pre>
 
           <h3>Validate a use case</h3>
-          <p>Once a use case has been formalized, we would like to formally verify it. There is actually... nothing to do, because we know our runs must be valid since they are well-typed. If we have tried to define an invalid run like:</p>
+          <p>Once a use case has been formalized, we would like to formally verify it. There is actually... nothing to do, because we know that our runs must be valid since they are well-typed. If we have tried to define an invalid run like:</p>
           <pre>Definition run_your_name_ok (argv : list LString.t) (name : LString.t)
   : Run.t (your_name argv) tt.
   eapply Run.Let.
