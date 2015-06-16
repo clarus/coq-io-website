@@ -142,7 +142,7 @@ Definition effect : Effect.t :=
   | Choose : forall (A : Type), t E A -> t E A -> t E A
   | Join : forall (A B : Type), t E A -> t E B -> t E (A * B).
 End C.</pre>
-          <p>It can be:</p>
+          <p>A computation can be:</p>
           <ul>
             <li><code>Ret e</code>: the pure expression <code>e</code>;</li>
             <li><code>Call c</code>: the call of the command <code>c</code>, waiting for an answer of type <code>answer c</code> from the system;</li>
@@ -157,7 +157,7 @@ Let : C.t E A -> (A -> C.t E B) -> C.t E B</pre>
           <p>As you can see, it is possible to lift a pure expression of type <code>A</code> to a computation of type <code>C.t E A</code> with the <code>Ret</code> constructor, but it is impossible to do the reverse. The only way to access the result of a computation is by providing a function returning another computation, using the constructor <code>Let</code>. This corresponds to the intuition that a program containing a program with IO is also a program with IO, so the property of being with IO is hereditary.</p>
 
           <h3>Compilation</h3>
-          <p>In order to be executed, the computations are compiled into OCaml programs with IO.</p>
+          <p>In order to be executed, the computations are compiled into OCaml programs with IO. This compilation is done by customizing the <a href="https://coq.inria.fr/refman/Reference-Manual025.html">extraction mechanism</a> used to compile pure Coq expressions to pure OCaml programs. The effects and computation primitives are extracted to explicit <a href="http://ocsigen.org/lwt/">Lwt</a> constructs. Lwt is a popular library for asynchronous IO in OCaml. This compilation phase is not formally verified.</p>
 
           <h2>Verification by use cases</h2>
         </div>
