@@ -19,7 +19,7 @@ Import C.Notations.
 (** The classic Hello World program. *)
 Definition hello_world (argv : list LString.t) : C.t System.effect unit :=
   System.log (LString.s "Hello world!").</pre>
-          <p>We load some libraries and write the <code>hello_world</code> program by calling the <code>System.log</code> function to print a message on the terminal. The return type of the program is <code>C.t System.effects unit</code>, which means this is an <em>impure</em> computation with <em>system</em> effects and returning a value of type <code>unit</code>. The impure computations are the computations which are not purely functional, in the sense they do some IO or modify a state variable for example. The command line arguments are given by the list of strings <code>argv</code>, but not used here.</p>
+          <p>We load some libraries and write the <code>hello_world</code> program by calling the <code>System.log</code> function to print a message on the terminal. The return type of the program is <code>C.t System.effects unit</code>, which means this is an <em>impure</em> computation with <em>system</em> effects and returning a value of type <code>unit</code>. The impure computations are the computations which are not purely functional, in the sense they do some IO or modify a state variable for example. The command-line arguments are given by the list of strings <code>argv</code>, but not used here.</p>
 
           <p>To compile the <code>hello_world</code> program, add the lines:</p>
           <pre>Definition main := Extraction.launch hello_world.
@@ -33,7 +33,7 @@ Extraction "extraction/main" main.</pre>
           <p>The full documentation of the <code>coq:io:system</code> library is available on <em>TODO</em>.</p>
 
           <h3>Your name</h3>
-          <p>The following program reads a name on the command line and answers hello to this name:</p>
+          <p>The following program reads a name on the command-line and answers hello to this name:</p>
           <pre>(** Ask for the user name and answer hello. *)
 Definition your_name (argv : list LString.t) : C.t System.effect unit :=
   do! System.log (LString.s "What is your name?") in
@@ -59,7 +59,7 @@ Definition cat (argv : list LString.t) : C.t System.effect unit :=
     end
   | _ => System.log (LString.s "Expected one parameter.")
   end.</pre>
-        <p>It is analogous to the <code>cat</code> Unix command. It uses the command line argument to get the file name to display, and then read the file with <code>System.read_file</code>.</p>
+        <p>It is analogous to the <code>cat</code> Unix command. It uses the command-line argument to get the file name to display, and then read the file with <code>System.read_file</code>.</p>
 
           <h3>Uname</h3>
           <p>This program wrap the <code>uname</code> command to display the operating system kind and the type of machine:</p>
@@ -107,6 +107,29 @@ Definition double_sleep_seq (argv : list LString.t) : C.t System.effect unit :=
 Task of 2 seconds ended.</pre>
 
           <h2>The effects system</h2>
+          <p>What is the definition of a computation with IO and how does this work?</p>
+          <p>An effect is declared by an element of type <code>Effect.t</code>:</p>
+          <pre>Module Effect.
+  Record t := New {
+    command : Type;
+    answer : command -> Type }.
+End Effect.</pre>
+          <p>It is given by a type of <code>command</code>, a set of operations to communicate with the outer world, and a dependent type of <code>answer</code>, the type of answers given by the system to a command.</p>
+          <p>For example, for an effect with <code>print</code> and <code>read_line</code> operations to communicate with the command-line, the declaration could be:</p>
+          <pre>Inductive command : Type :=
+| Print (message : LString.t)
+| ReadLine.
+
+Definition answer (c : command) : Type :=
+  match c with
+  | Print _ => unit
+  | ReadLine => LString.t
+  end.
+
+Definition effect : Effect.t :=
+  Effect.New command answer.</pre>
+          <p>A command can be a <code>Print message</code> or a <code>ReadLine</code>. The answer for a <code>Print</code> is of type <code>unit</code>, and the answer for a <code>ReadLine</code> is of type <code>LString.t</code>. Notice that we only declare the effect, the definition of how to actually execute it is given latter during compilation. Most effects are declared this way, with a sum type for the command. A composition of two effects is made up by combining their sum types.</p>
+          <p>The type <code>C.t</code></p>
 
           <h2>Verification by use cases</h2>
         </div>
