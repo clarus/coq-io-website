@@ -199,7 +199,7 @@ Definition your_name (argv : list LString.t) : C.t System.effect unit :=
   | Join : forall {E A B} {c_x : C.t E A} {x : A} {c_y : C.t E B} {y : B},
     t c_x x -> t c_y y -> t (C.Join A B c_x c_y) (x, y).
 End Run.</pre>
-          <p>Seemingly complex, this definition follows the one of the computations adding the definition of an environment. You do not need to read this definition carefully, just to get the intuition that:</p>
+          <p>Seemingly complex, this definition follows the one of the computations adding the definition of an environment. You do not need to read this definition carefully, you just need to get the intuition that:</p>
           <ul>
             <li>the run of <code>C.Ret e</code> is the computation <code>e</code> with an empty environment;</li>
             <li>the run of <code>C.Call c</code> is this call together with an environment given by an answer to this call;</li>
