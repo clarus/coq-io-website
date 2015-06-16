@@ -133,7 +133,7 @@ Definition effect : Effect.t :=
           <p>A command is a <code>Print message</code> or a <code>ReadLine</code>. The answer for a <code>Print</code> is of type <code>unit</code>, the answer for a <code>ReadLine</code> is of type <code>LString.t</code>. Notice that we only declare the effect, the definition of how to actually execute it is given latter during compilation. Most effects are declared this way, with a sum type for the command type. A composition of two effects is made up by combining their command sum types.</p>
 
           <h3>Computation</h3>
-          <p>The computations are used to write programs with IO by assembling pure Coq expressions with external calls to the system. A computation returning a value of type <code>A</code> with the effect <code>E</code> lives in the type <code>C.t E A</code>:</p>
+          <p>The computations are used to write programs with IO by assembling pure Coq expressions with external calls to the system. A computation returning a value of type <code>A</code> with the effect <code>E</code> lives in the inductive type <code>C.t E A</code>:</p>
           <pre>Module C.
   Inductive t (E : Effect.t) : Type -> Type :=
   | Ret : forall (A : Type) (x : A), t E A
@@ -160,6 +160,52 @@ Let : C.t E A -> (A -> C.t E B) -> C.t E B</pre>
           <p>In order to be executed, the computations are compiled into OCaml programs with IO. This compilation is done by customizing the <a href="https://coq.inria.fr/refman/Reference-Manual025.html">extraction mechanism</a> used to compile pure Coq expressions to pure OCaml programs. The effects and computation primitives are extracted to explicit <a href="http://ocsigen.org/lwt/">Lwt</a> constructs. Lwt is a popular library for asynchronous IO in OCaml. This compilation phase is not formally verified.</p>
 
           <h2>Verification by use cases</h2>
+          <p>A popular technique to specify interactive programs with a lot of IO is do define <a href="https://en.wikipedia.org/wiki/Use_case">use cases</a>. A use case is basically a scenario of execution of the program, defined as a list of interaction steps between the program and the external world.</p>
+
+          <h3>Use case</h3>
+          <p>Let us take the previous example of <code>your_name</code>:</p>
+          <pre>(** Ask for the user name and answer hello. *)
+Definition your_name (argv : list LString.t) : C.t System.effect unit :=
+  do! System.log (LString.s "What is your name?") in
+  let! name := System.read_line in
+  match name with
+  | None => ret tt
+  | Some name => System.log (LString.s "Hello " ++ name ++ LString.s "!")
+  end.</pre>
+          <p>A use case for a valid execution is:</p>
+          <ul>
+            <li>the program displays "What is your name?" on the terminal;</li>
+            <li>the program asks to read a new line;</li>
+            <li>the user answers by the string <em>name</em>;</li>
+            <li>the program displays a message containing the string <em>name</em>.</li>
+          </ul>
+          <p>This use case is parametrized by a string <em>name</em>. We could write a test program interacting with <code>your_name</code>, answering the <em>name</em> string to the <code>read_line</code> request and checking that the program outputs are as expected. The limitation of this method is that we can only test a finite number of <em>name</em> values, instead of all the possible strings.</p>
+
+          <h3>Run</h3>
+          <p>To cover all the use case instances, Coq.io introduces the notion of <em>run</em>. A run describes one execution of a computation, by programming the behavior of the computation's environment in a particular execution. Said otherwise, a run contains two programs: the computation itself and its environment, with typing rules ensuring that the environment answers to each request of the computation.</p>
+          <p>A run is of type <code>Run.t e v</code>, where <code>e</code> is a computation and <code>v</code> is the expected result of the computation. We formally define this type by:</p>
+          <pre>Module Run.
+  Inductive t : forall {E : Effect.t} {A : Type}, C.t E A -> A -> Type :=
+  | Ret : forall {E A} (x : A), t (C.Ret (E := E) A x) x
+  | Call : forall E (c : Effect.command E) (answer : Effect.answer E c),
+    t (C.Call (E := E) c) answer
+  | Let : forall {E A B} {c_x : C.t E A} {x : A} {c_f : A -> C.t E B} {y : B},
+    t c_x x -> t (c_f x) y -> t (C.Let A B c_x c_f) y
+  | ChooseLeft : forall {E A} {c_x1 c_x2 : C.t E A} {x1 : A},
+    t c_x1 x1 -> t (C.Choose A c_x1 c_x2) x1
+  | ChooseRight : forall {E A} {c_x1 c_x2 : C.t E A} {x2 : A},
+    t c_x2 x2 -> t (C.Choose A c_x1 c_x2) x2
+  | Join : forall {E A B} {c_x : C.t E A} {x : A} {c_y : C.t E B} {y : B},
+    t c_x x -> t c_y y -> t (C.Join A B c_x c_y) (x, y).
+End Run.</pre>
+          <p>Seemingly complex, this definition follows the one of the computations adding the definition of an environment. You do not need to read this definition carefully, just to get the intuition that:</p>
+          <ul>
+            <li>the run of <code>C.Ret e</code> is just the computation with an empty environment;</li>
+            <li>the run of <code>C.Call c</code> is this call together with an environment given by an answer to this call;</li>
+            <li>the run of <code>C.Let e1 e2</code> is a sequence of a run of <code>e1</code> and a run of <code>e2</code>;</li>
+            <li>the run of <code>C.Choose e1 e2</code> is either a run of <code>e1</code> or a run of <code>e2</code>;</li>
+            <li>the run of <code>C.Join e1 e2</code> is the run of <code>e1</code> and a run of <code>e2</code>. Even if these two runs may actually interact, we are only interested in their projections on <code>e1</code> and <code>e2</code>.</li>
+          </ul>
         </div>
       </div>
 <%= footer %>
