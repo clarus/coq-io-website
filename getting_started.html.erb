@@ -108,6 +108,8 @@ Task of 2 seconds ended.</pre>
 
           <h2>The effects system</h2>
           <p>What is the definition of a computation with IO and how does this work?</p>
+
+          <h3>Effect</h3>
           <p>An effect describes a set of IO or impure operations. An effect is declared by an element of type <code>Effect.t</code>:</p>
           <pre>Module Effect.
   Record t := New {
@@ -129,7 +131,9 @@ Definition answer (c : command) : Type :=
 Definition effect : Effect.t :=
   Effect.New command answer.</pre>
           <p>A command is a <code>Print message</code> or a <code>ReadLine</code>. The answer for a <code>Print</code> is of type <code>unit</code>, the answer for a <code>ReadLine</code> is of type <code>LString.t</code>. Notice that we only declare the effect, the definition of how to actually execute it is given latter during compilation. Most effects are declared this way, with a sum type for the command type. A composition of two effects is made up by combining their command sum types.</p>
-          <p>An impure computation returning a value of type <code>A</code> with the effect <code>E</code> lives in the type <code>C.t E A</code>:</p>
+
+          <h3>Computation</h3>
+          <p>The computations are used to write programs with IO by assembling pure Coq expressions with external calls to the system. A computation returning a value of type <code>A</code> with the effect <code>E</code> lives in the type <code>C.t E A</code>:</p>
           <pre>Module C.
   Inductive t (E : Effect.t) : Type -> Type :=
   | Ret : forall (A : Type) (x : A), t E A
@@ -142,11 +146,19 @@ End C.</pre>
           <ul>
             <li><code>Ret e</code>: the pure expression <code>e</code>;</li>
             <li><code>Call c</code>: the call of the command <code>c</code>, waiting for an answer of type <code>answer c</code> from the system;</li>
-            <li><code>Let e1 e2</code>: the sequential composition and binding of <code>e1</code> and <code>e2</code>. The term <code>e2</code> is a function, applied to the result of the computation <code>e1</code>. We use the notation <code>let! x := e1 in e2</code> for <code>Let e1 (fun x => e2)</code>;</li>
+            <li><code>Let e1 e2</code>: the sequential composition and binding of <code>e1</code> and <code>e2</code>. The term <code>e2</code> is a function, applied to the result of the computation <code>e1</code>. We used the notation <code>let! x := e1 in e2</code> for <code>Let e1 (fun x => e2)</code>;</li>
             <li><code>Choose e1 e2</code>: either <code>e1</code> or <code>e2</code>. The way the choice is made is not specified. In practice, it can be the first computation to terminate;</li>
             <li><code>Join e1 e2</code>: the couple of computations <code>e1</code> and <code>e2</code>, concurrently executed.</li>
           </ul>
           <p>As for the definition of <code>Effect.t</code>, this definition is abstract: nothing is said about the implementation of these five primitives till compilation. The main advantage is that we do not need to introduce any axioms to reason about IO.</p>
+          <p>The <a href="https://www.haskell.org/">Haskell</a> user can recognize here the definition of a monad, with the <em>return</em> being the <code>Ret</code> and the <em>bind</em> being the <code>Let</code>:</p>
+          <pre>Ret : A -> C.t E A
+Let : C.t E A -> (A -> C.t E B) -> C.t E B</pre>
+          <p>As you can see, it is possible to lift a pure expression of type <code>A</code> to a computation of type <code>C.t E A</code> with the <code>Ret</code> constructor, but it is impossible to do the reverse. The only way to access the result of a computation is by providing a function returning another computation, using the constructor <code>Let</code>. This corresponds to the intuition that a program containing a program with IO is also a program with IO, so the property of being with IO is hereditary.</p>
+
+          <h3>Compilation</h3>
+          <p>In order to be executed, the computations are compiled into OCaml programs with IO.</p>
+
           <h2>Verification by use cases</h2>
         </div>
       </div>
