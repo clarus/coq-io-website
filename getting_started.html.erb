@@ -47,7 +47,7 @@ Definition your_name (argv : list LString.t) : C.t System.effect unit :=
           <p>executes <code>e1</code>, assigns the result to <code>x</code> and then executes <code>e2</code>. The <code>do!</code> is a syntactic sugar for a <code>let!</code> with an empty variable name. We use the <code>System.read_line</code> function which gets a new line on the standard input. If the <code>read_line</code> operation fails we returns the pure value <code>tt</code> of type <code>unit</code> using the <code>ret</code> operator, else we print the user name on the terminal. We run this program as before by compilation to OCaml.</p>
 
           <h3>Cat</h3>
-          <p>This program opens a file and write its content:</p>
+          <p>This program opens a file and displays its content:</p>
           <pre>(** Display the content of a file. *)
 Definition cat (argv : list LString.t) : C.t System.effect unit :=
   match argv with
@@ -75,11 +75,38 @@ Definition uname (argv : list LString.t) : C.t System.effect unit :=
     System.log (LString.s "Machine: " ++ LString.trim machine)
   | _ => ret tt
   end.</pre>
-        <p>We use the command <code>System.eval</code> to evaluate a command and get its status code and output. If the two <code>uname</code> calls are successful, we retrieve the OS and machine names and display them. The <code>0%Z</code> stands for the zero in the type <code>Z</code> of the relative integers. A null value means by convention that the commands were successful.</p>
-
-          <h2>The effects system</h2>
+          <p>We use the function <code>System.eval</code> to evaluate a command and get its status code and output. If the two <code>uname</code> calls are successful, we retrieve the OS and machine names and display them. The <code>0%Z</code> stands for the zero in the type <code>Z</code> of the relative integers. A null value means by convention that the commands were successful.</p>
 
           <h2>Use concurrency</h2>
+          <p>In order not to freeze, interactive programs usually need to run many IO operations in parallel. Consider for example an application which must keep a reactive user interface while doing slow network operations.</p>
+          <p>To run two operations in parallel, we use the <code>join</code> operator:</p>
+          <pre>join : C.t E A -> C.t E B -> C.t E (A * B)</pre>
+          <p>with <code>join x y</code> concurrently computing the couple of results for the computations <code>x</code> and <code>y</code>.</p>
+          <p>In the following program we concurrently run two sleep operations of 4 and 2 seconds:</p>
+          <pre>(** Do two sleep operations. *)
+Definition double_sleep (argv : list LString.t) : C.t System.effect unit :=
+  let! _ : unit * unit :=
+    join
+      (let! _ := System.eval [LString.s "sleep"; LString.s "4"] in
+      System.log (LString.s "Task of 4 seconds ended."))
+      (let! _ := System.eval [LString.s "sleep"; LString.s "2"] in
+      System.log (LString.s "Task of 2 seconds ended.")) in
+  ret tt.</pre>
+          <p>The output is:</p>
+          <pre>Task of 2 seconds ended.
+Task of 4 seconds ended.</pre>
+          <p>and the total execution time is 4 seconds. If the sleeps were done sequentially:</p>
+          <pre>(** Do two sleep operations (sequential). *)
+Definition double_sleep_seq (argv : list LString.t) : C.t System.effect unit :=
+  let! _ := System.eval [LString.s "sleep"; LString.s "4"] in
+  do! System.log (LString.s "Task of 4 seconds ended.") in
+  let! _ := System.eval [LString.s "sleep"; LString.s "2"] in
+  System.log (LString.s "Task of 2 seconds ended.").</pre>
+          <p>the execution time would be of 6 seconds and the output:</p>
+          <pre>Task of 4 seconds ended.
+Task of 2 seconds ended.</pre>
+
+          <h2>The effects system</h2>
 
           <h2>Verification by use cases</h2>
         </div>
