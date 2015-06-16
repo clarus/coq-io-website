@@ -19,12 +19,12 @@ Import C.Notations.
 (** The classic Hello World program. *)
 Definition hello_world (argv : list LString.t) : C.t System.effect unit :=
   System.log (LString.s "Hello world!").</pre>
-          <p>We load some libraries and write the <code>hello_world</code> program by calling the <code>System.log</code> function to print a message on the terminal. The return type of the program is <code>C.t System.effects unit</code>, which means this is an <em>impure</em> computation with <em>system</em> effects and returning a value of type <code>unit</code>. The impure computations are the computations which are not purely functional, in the sense they do some IO or modify a state variable for example. The command-line arguments are given by the list of strings <code>argv</code>, but not used here.</p>
+          <p>We load some libraries and write the <code>hello_world</code> program by calling the <code>System.log</code> function to print a message on the terminal. The return type of the program is <code>C.t System.effects unit</code>, which means this is an <em>impure</em> computation with the <em>system</em> effect and returning a value of type <code>unit</code>. The impure computations are the computations which are not purely functional, in the sense they do some effects, like IO or modifying a state variable. The system effect is an effect we use to do IO with the system. The command-line arguments are given by the list of strings <code>argv</code>, but are not used here.</p>
 
-          <p>To compile the <code>hello_world</code> program, add the lines:</p>
+          <p>To compile the <code>hello_world</code> program to generate an <a href="https://ocaml.org/">OCaml</a> file <code>main.ml</code>, add the lines:</p>
           <pre>Definition main := Extraction.launch hello_world.
 Extraction "extraction/main" main.</pre>
-          <p>to generate an <a href="https://ocaml.org/">OCaml</a> file <code>main.ml</code>. We compile and run this file with:</p>
+          <p>We compile and run <code>main.ml</code> with:</p>
           <pre>ocamlbuild main.native -use-ocamlfind -package io-system
 ./main.native</pre>
           <p>This should display <code>Hello world!</code> on the terminal.</p>
@@ -33,7 +33,7 @@ Extraction "extraction/main" main.</pre>
           <p>The full documentation of the <code>coq:io:system</code> library is available on <em>TODO</em>.</p>
 
           <h3>Your name</h3>
-          <p>The following program reads a name on the command-line and answers hello to this name:</p>
+          <p>The following program reads a name on the command-line and answers "hello" to this name:</p>
           <pre>(** Ask for the user name and answer hello. *)
 Definition your_name (argv : list LString.t) : C.t System.effect unit :=
   do! System.log (LString.s "What is your name?") in
@@ -44,7 +44,7 @@ Definition your_name (argv : list LString.t) : C.t System.effect unit :=
   end.</pre>
           <p>We see here how to compose impure computations in sequence with the <code>do!</code> and <code>let!</code> keywords. The construct:</p>
           <pre>let! x := e1 in e2</pre>
-          <p>executes <code>e1</code>, assigns the result to <code>x</code> and then executes <code>e2</code>. The <code>do!</code> is a syntactic sugar for a <code>let!</code> with an empty variable name. We use the <code>System.read_line</code> function which gets a new line on the standard input. If the <code>read_line</code> operation fails we returns the pure value <code>tt</code> of type <code>unit</code> using the <code>ret</code> operator, else we print the user name on the terminal. We run this program as before by compilation to OCaml.</p>
+          <p>executes <code>e1</code>, assigns the result to <code>x</code> and then executes <code>e2</code>. The <code>do!</code> is a syntactic sugar for a <code>let!</code> without a variable <code>x</code>, so for the case of <code>e1</code> returning the <code>unit</code> value. We use the <code>System.read_line</code> function which reads a new line on the standard input. If the <code>read_line</code> operation fails, we returns the pure value <code>tt</code> of type <code>unit</code> using the <code>ret</code> operator, else we print the user name on the terminal. We run this program as before by compilation to OCaml.</p>
 
           <h3>Cat</h3>
           <p>This program opens a file and displays its content:</p>
