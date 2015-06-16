@@ -108,13 +108,13 @@ Task of 2 seconds ended.</pre>
 
           <h2>The effects system</h2>
           <p>What is the definition of a computation with IO and how does this work?</p>
-          <p>An effect is declared by an element of type <code>Effect.t</code>:</p>
+          <p>An effect describes a set of IO or impure operations. An effect is declared by an element of type <code>Effect.t</code>:</p>
           <pre>Module Effect.
   Record t := New {
     command : Type;
     answer : command -> Type }.
 End Effect.</pre>
-          <p>It is given by a type of <code>command</code>, a set of operations to communicate with the outer world, and a dependent type of <code>answer</code>, the type of answers given by the system to a command.</p>
+          <p>This record contains a type of <code>command</code>, a set of operations to communicate with the outer world, and a dependent type of <code>answer</code>, the type of answers given by the system to a command.</p>
           <p>For example, for an effect with <code>print</code> and <code>read_line</code> operations to communicate with the command-line, the declaration could be:</p>
           <pre>Inductive command : Type :=
 | Print (message : LString.t)
@@ -128,9 +128,25 @@ Definition answer (c : command) : Type :=
 
 Definition effect : Effect.t :=
   Effect.New command answer.</pre>
-          <p>A command can be a <code>Print message</code> or a <code>ReadLine</code>. The answer for a <code>Print</code> is of type <code>unit</code>, and the answer for a <code>ReadLine</code> is of type <code>LString.t</code>. Notice that we only declare the effect, the definition of how to actually execute it is given latter during compilation. Most effects are declared this way, with a sum type for the command. A composition of two effects is made up by combining their sum types.</p>
-          <p>The type <code>C.t</code></p>
-
+          <p>A command is a <code>Print message</code> or a <code>ReadLine</code>. The answer for a <code>Print</code> is of type <code>unit</code>, the answer for a <code>ReadLine</code> is of type <code>LString.t</code>. Notice that we only declare the effect, the definition of how to actually execute it is given latter during compilation. Most effects are declared this way, with a sum type for the command type. A composition of two effects is made up by combining their command sum types.</p>
+          <p>An impure computation returning a value of type <code>A</code> with the effect <code>E</code> lives in the type <code>C.t E A</code>:</p>
+          <pre>Module C.
+  Inductive t (E : Effect.t) : Type -> Type :=
+  | Ret : forall (A : Type) (x : A), t E A
+  | Call : forall (command : Effect.command E), t E (Effect.answer E command)
+  | Let : forall (A B : Type), t E A -> (A -> t E B) -> t E B
+  | Choose : forall (A : Type), t E A -> t E A -> t E A
+  | Join : forall (A B : Type), t E A -> t E B -> t E (A * B).
+End C.</pre>
+          <p>It can be:</p>
+          <ul>
+            <li><code>Ret e</code>: the pure expression <code>e</code>;</li>
+            <li><code>Call c</code>: the call of the command <code>c</code>, waiting for an answer of type <code>answer c</code> from the system;</li>
+            <li><code>Let e1 e2</code>: the sequential composition and binding of <code>e1</code> and <code>e2</code>. The term <code>e2</code> is a function, applied to the result of the computation <code>e1</code>. We use the notation <code>let! x := e1 in e2</code> for <code>Let e1 (fun x => e2)</code>;</li>
+            <li><code>Choose e1 e2</code>: either <code>e1</code> or <code>e2</code>. The way the choice is made is not specified. In practice, it can be the first computation to terminate;</li>
+            <li><code>Join e1 e2</code>: the couple of computations <code>e1</code> and <code>e2</code>, concurrently executed.</li>
+          </ul>
+          <p>As for the definition of <code>Effect.t</code>, this definition is abstract: nothing is said about the implementation of these five primitives till compilation. The main advantage is that we do not need to introduce any axioms to reason about IO.</p>
           <h2>Verification by use cases</h2>
         </div>
       </div>
