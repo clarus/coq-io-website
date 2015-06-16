@@ -1,2 +1,2 @@
-# coq-io-website
-The website of coq.io.
+# Website
+The website of [Coq.io](http://coq.io/).
