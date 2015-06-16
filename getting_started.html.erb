@@ -109,7 +109,7 @@ Task of 2 seconds ended.</pre>
           <h2>The effects system</h2>
           <p>What is the definition of a computation with IO and how does this work?</p>
 
-          <h3>Effect</h3>
+          <h3>Effects</h3>
           <p>An effect describes a set of IO or impure operations. An effect is declared by an element of type <code>Effect.t</code>:</p>
           <pre>Module Effect.
   Record t := New {
@@ -132,7 +132,7 @@ Definition effect : Effect.t :=
   Effect.New command answer.</pre>
           <p>A command is a <code>Print message</code> or a <code>ReadLine</code>. The answer for a <code>Print</code> is of type <code>unit</code>, the answer for a <code>ReadLine</code> is of type <code>LString.t</code>. Notice that we only declare the effect, the definition of how to actually execute it is given latter during compilation. Most effects are declared this way, with a sum type for the command type. A composition of two effects is made up by combining their command sum types.</p>
 
-          <h3>Computation</h3>
+          <h3>Computations</h3>
           <p>The computations are used to write programs with IO by assembling pure Coq expressions with external calls to the system. A computation returning a value of type <code>A</code> with the effect <code>E</code> lives in the inductive type <code>C.t E A</code>:</p>
           <pre>Module C.
   Inductive t (E : Effect.t) : Type -> Type :=
@@ -160,9 +160,10 @@ Let : C.t E A -> (A -> C.t E B) -> C.t E B</pre>
           <p>In order to be executed, the computations are compiled into OCaml programs with IO. This compilation is done by customizing the <a href="https://coq.inria.fr/refman/Reference-Manual025.html">extraction mechanism</a> used to compile pure Coq expressions to pure OCaml programs. The effects and computation primitives are extracted to explicit <a href="http://ocsigen.org/lwt/">Lwt</a> constructs. Lwt is a popular library for asynchronous IO in OCaml. This compilation phase is not formally verified.</p>
 
           <h2>Verification by use cases</h2>
-          <p>A popular technique to specify interactive programs with a lot of IO is do define <a href="https://en.wikipedia.org/wiki/Use_case">use cases</a>. A use case is basically a scenario of execution of the program, defined as a list of interaction steps between the program and the external world.</p>
+          <p>How to exploit the Coq system to verify our programs?</p>
+          <p>A popular technique to specify interactive programs with a lot of IO is do define a set of <a href="https://en.wikipedia.org/wiki/Use_case">use cases</a>. Basically, a use case is a scenario of execution of the program, defined as a list of interaction steps between the program and the external world.</p>
 
-          <h3>Use case</h3>
+          <h3>Use cases</h3>
           <p>Let us take the previous example of <code>your_name</code>:</p>
           <pre>(** Ask for the user name and answer hello. *)
 Definition your_name (argv : list LString.t) : C.t System.effect unit :=
@@ -181,7 +182,7 @@ Definition your_name (argv : list LString.t) : C.t System.effect unit :=
           </ul>
           <p>This use case is parametrized by a string <em>name</em>. We could write a test program interacting with <code>your_name</code>, answering the <em>name</em> string to the <code>read_line</code> request and checking that the program outputs are as expected. The limitation of this method is that we can only test a finite number of <em>name</em> values, instead of all the possible strings.</p>
 
-          <h3>Run</h3>
+          <h3>Runs</h3>
           <p>To cover all the use case instances, Coq.io introduces the notion of <em>run</em>. A run describes one execution of a computation, by programming the behavior of the computation's environment in a particular execution. Said otherwise, a run contains two programs: the computation itself and its environment, with typing rules ensuring that the environment answers to each request of the computation.</p>
           <p>A run is of type <code>Run.t e v</code>, where <code>e</code> is a computation and <code>v</code> is the expected result of the computation. We formally define this type by:</p>
           <pre>Module Run.
@@ -206,6 +207,108 @@ End Run.</pre>
             <li>the run of <code>C.Choose e1 e2</code> is either a run of <code>e1</code> or a run of <code>e2</code>;</li>
             <li>the run of <code>C.Join e1 e2</code> is the run of <code>e1</code> and a run of <code>e2</code>. Even if these two runs may actually interact, we are only interested in their projections on <code>e1</code> and <code>e2</code>.</li>
           </ul>
+          <p>A use case can be formalized by a set of runs, with one run per instance of the use case. For our <code>your_name</code> example, we will define a set of runs <code>run_your_name_ok</code> parametrized by the variable <code>name</code> to formalize our use case.</p>
+
+          <h3>A symbolic debugger</h3>
+          <p>Giving a run for a computation by directly writing its definition would be quite cumbersome. Instead, we exploit the tactic mode of Coq to define a run by interacting with the computation like in a <em>debugger</em>. The breakpoints of this debugger are the calls of the computation. To continue to the next breakpoint, you must provide a well-typed answer for the call.</p>
+          <p>Let's start with <code>run_your_name_ok</code>:</p>
+          <pre>Definition run_your_name_ok (argv : list LString.t) (name : LString.t)
+  : Run.t (your_name argv) tt.</pre>
+          <p>This run is parametrized by the program arguments <code>argv</code> and the user name <code>name</code>. This is a run of type <code>Run.t (your_name argv) tt</code>, running the program <code>your_name</code> with the parameters <code>argv</code> and expecting the unit value <code>tt</code> as a final answer. To these lines, the Coq system answers us:</p>
+          <pre>1 subgoals
+argv : list LString.t
+name : LString.t
+______________________________________(1/1)
+Run.t (your_name argv) tt</pre>
+          <p>This means that we are at the beginning of the program <code>your_name</code>. This program starts with a <code>do! e1 in e2</code>, which corresponds to the constructor <code>C.Let</code> applied to <code>e1</code> and <code>fun _ => e2</code>. We step into this <code>C.Let</code> by applying the <code>Run.Let</code> constructor:</p>
+          <pre>apply Run.Let.</pre>
+          <p>We get an error:</p>
+          <pre>Error: Cannot infer the implicit parameter x of Let.</pre>
+          <p>This means that Coq needs to know the expected result of the left-hand side of the <code>C.Let</code>. We know it must be <code>tt</code>, and we will let Coq infer this value with <code>eapply</code>:</p>
+          <pre>eapply Run.Let.</pre>
+          <p>We get two subgoals, one for each side of the <code>C.Let</code>:</p>
+          <pre>2 subgoal
+argv : list LString.t
+name : LString.t
+______________________________________(1/2)
+Run.t (log (LString.s "What is your name?")) ?29
+______________________________________(2/2)
+Run.t
+  (let!name0 : option LString.t := read_line
+   in match name0 with
+      | Some name1 => log (LString.s "Hello " ++ name1 ++ LString.s "!")
+      | None => ret tt
+      end) tt</pre>
+          <p>The library <code>coq:io:system</code> provides a run <code>Run.log_ok</code> for the logging of a string <code>s</code>. This run will execute a computation <code>System.log s</code> checking that printed string is <code>s</code>. We apply this run:</p>
+          <pre>apply (Run.log_ok (LString.s "What is your name?")).</pre>
+          <p>a get one remaining goal:</p>
+          <pre>1 subgoals
+argv : list LString.t
+name : LString.t
+______________________________________(1/1)
+Run.t
+  (let!name0 : option LString.t := read_line
+   in match name0 with
+      | Some name1 => log (LString.s "Hello " ++ name1 ++ LString.s "!")
+      | None => ret tt
+      end) tt</pre>
+          <p>Like for the <code>do!</code>, we step into the <code>let!</code> with a:</p>
+          <pre>eapply Run.Let.</pre>
+          <p>to get:</p>
+          <pre>2 subgoal
+argv : list LString.t
+name : LString.t
+______________________________________(1/2)
+Run.t read_line ?38
+______________________________________(2/2)
+Run.t
+  match ?38 with
+  | Some name0 => log (LString.s "Hello " ++ name0 ++ LString.s "!")
+  | None => ret tt
+  end tt</pre>
+          <p>The <code>?38</code> variable, the result of <code>read_line</code>, is still unknown at this point. We run the <code>read_line</code> command by using the <code>Run.read_line_ok</code> run with the parameter <code>name</code> to answer the name of the user:</p>
+          <pre>apply (Run.read_line_ok name).</pre>
+          <p>We get:</p>
+          <pre>1 subgoals
+argv : list LString.t
+name : LString.t
+______________________________________(1/1)
+Run.t
+  match Some name with
+  | Some name0 => log (LString.s "Hello " ++ name0 ++ LString.s "!")
+  | None => ret tt
+  end tt</pre>
+          <p>The variable <code>?38</code> has been replaced by <code>Some name</code>. Once again we use the run <code>Run.log_ok</code> to run a <code>System.log</code>:</p>
+          <pre>apply (Run.log_ok (_ ++ name ++ _)).</pre>
+          <p>The values of the underscores <code>_</code> are automatically inferred by Coq:</p>
+          <pre>No more subgoals.</pre>
+          <p>We conclude:</p>
+          <pre>Defined.</pre>
+          <p>The full definition of the run is then:</p>
+          <pre>Definition run_your_name_ok (argv : list LString.t) (name : LString.t)
+  : Run.t (your_name argv) tt.
+  eapply Run.Let.
+  apply (Run.log_ok (LString.s "What is your name?")).
+  eapply Run.Let.
+  apply (Run.read_line_ok name).
+  apply (Run.log_ok (_ ++ name ++ _)).
+Defined.</pre>
+          <p>This run is the Coq formalization of our use case for valid executions of the computation <code>your_name</code>.</p>
+
+          <h3>Validate a use case</h3>
+          <p>Once a use case has been formalized, we would like to formally verify it. There is actually... nothing to do, because we know our runs are all valid because they are well-typed. If we have tried to define an invalid run like:</p>
+          <pre>Definition run_your_name_ok (argv : list LString.t) (name : LString.t)
+  : Run.t (your_name argv) tt.
+  eapply Run.Let.
+  apply (Run.log_ok (LString.s "What is your name? blabla#@!")) (* invalid string *)
+  eapply Run.Let.
+  apply (Run.read_line_ok name).
+  apply (Run.log_ok (_ ++ name ++ _)).
+Defined.</pre>
+          <p>we would have got an error at definition time:</p>
+          <pre>Error: Impossible to unify
+ "Run.t (log (LString.s "What is your name? blabla#@!")) tt" with
+ "Run.t (log (LString.s "What is your name?")) ?29".</pre>
         </div>
       </div>
 <%= footer %>
