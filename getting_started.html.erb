@@ -19,7 +19,7 @@ Import C.Notations.
 (** The classic Hello World program. *)
 Definition hello_world (argv : list LString.t) : C.t System.effect unit :=
   System.log (LString.s "Hello world!").</pre>
-          <p>We load some libraries and write the <code>hello_world</code> program by calling the <code>System.log</code> function to print a message on the terminal. The return type of the program is <code>C.t System.effects unit</code>, which means this is an <em>impure</em> computation with the <em>system</em> effect and returning a value of type <code>unit</code>. The impure computations are the computations which are not purely functional, in the sense they do some effects, like IO or modifying a state variable. The system effect is an effect we use to do IO with the system. The command-line arguments are given by the list of strings <code>argv</code>, but are not used here.</p>
+          <p>We load some libraries and write the <code>hello_world</code> program by calling the <code>System.log</code> function to print a message on the terminal. The return type of the program is <code>C.t System.effect unit</code>, which means this is an <em>impure</em> computation with the <em>system</em> effect and returning a value of type <code>unit</code>. The impure computations are the computations which are not purely functional, in the sense they do some effects, like IO or modifying a state variable. The system effect is an effect we use to do IO with the system. The command-line arguments are given by the list of strings <code>argv</code>, but are not used here.</p>
 
           <p>To compile the <code>hello_world</code> program to generate an <a href="https://ocaml.org/">OCaml</a> file <code>main.ml</code>, add the lines:</p>
           <pre>Definition main := Extraction.launch hello_world.
@@ -161,7 +161,7 @@ Let : C.t E A -> (A -> C.t E B) -> C.t E B</pre>
 
           <h2>Verification by use cases</h2>
           <p>How to exploit the Coq system to verify our programs?</p>
-          <p>A popular technique to specify interactive programs with a lot of IO is do define a set of <a href="https://en.wikipedia.org/wiki/Use_case">use cases</a>. Basically, a use case is a scenario of execution of the program, defined as a list of interaction steps between the program and its external world.</p>
+          <p>A popular technique to specify interactive programs with a lot of IO is to define a set of <a href="https://en.wikipedia.org/wiki/Use_case">use cases</a>. Basically, a use case is a scenario of execution of the program, defined as a list of interaction steps between the program and its external world.</p>
 
           <h3>Use cases</h3>
           <p>Let us take the previous example of <code>your_name</code>:</p>
@@ -287,20 +287,16 @@ Run.t
           <p>The full definition of the run is then:</p>
           <pre>Definition run_your_name_ok (argv : list LString.t) (name : LString.t)
   : Run.t (your_name argv) tt.
-  eapply Run.Let.
-  apply (Run.log_ok (LString.s "What is your name?")).
-  eapply Run.Let.
-  apply (Run.read_line_ok name).
+  eapply Run.Let. apply (Run.log_ok (LString.s "What is your name?")).
+  eapply Run.Let. apply (Run.read_line_ok name).
   apply (Run.log_ok (_ ++ name ++ _)).
 Defined.</pre>
           <p>This run is the Coq formalization of our use case for the valid executions of the computation <code>your_name</code>.</p>
           <p>As another example, here is the formalization of the use case in which the <code>System.read_line</code> command fails (because of a terminal error for instance):</p>
           <pre>Definition run_your_name_error (argv : list LString.t)
   : Run.t (your_name argv) tt.
-  eapply Run.Let.
-  apply (Run.log_ok (LString.s "What is your name?")).
-  eapply Run.Let.
-  apply Run.read_line_error.
+  eapply Run.Let. apply (Run.log_ok (LString.s "What is your name?")).
+  eapply Run.Let. apply Run.read_line_error.
   apply Run.Ret.
 Defined.</pre>
 
@@ -308,10 +304,8 @@ Defined.</pre>
           <p>Once a use case has been formalized, we would like to formally verify it. There is actually... nothing to do, because we know that our runs must be valid since they are well-typed. If we have tried to define an invalid run like:</p>
           <pre>Definition run_your_name_ok (argv : list LString.t) (name : LString.t)
   : Run.t (your_name argv) tt.
-  eapply Run.Let.
-  apply (Run.log_ok (LString.s "What is your name? blabla#@!")) (* invalid string *)
-  eapply Run.Let.
-  apply (Run.read_line_ok name).
+  eapply Run.Let. apply (Run.log_ok (LString.s "What is your name? blabla#@!"))
+  eapply Run.Let. apply (Run.read_line_ok name).
   apply (Run.log_ok (_ ++ name ++ _)).
 Defined.</pre>
           <p>we would have gotten an error at definition time:</p>
