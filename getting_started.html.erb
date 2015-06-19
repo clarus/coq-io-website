@@ -173,14 +173,15 @@ Definition your_name (argv : list LString.t) : C.t System.effect unit :=
   | None => ret tt
   | Some name => System.log (LString.s "Hello " ++ name ++ LString.s "!")
   end.</pre>
-          <p>A use case for a valid execution can be:</p>
+          <p>This program is very simple, but the techniques we will describe can apply to any program with IO, like a web application, a system script, ...</p>
+          <p>A use case for a valid execution is:</p>
           <ul>
             <li>the program displays "What is your name?" on the terminal;</li>
             <li>the program asks to read a new line;</li>
             <li>the user answers by the string <em>name</em>;</li>
             <li>the program displays a message containing the string <em>name</em>.</li>
           </ul>
-          <p>This use case is parametrized by a string <em>name</em>. We could write a test program interacting with <code>your_name</code>, answering the <em>name</em> string to the <code>read_line</code> request and checking that the program outputs are as expected. The limitation of this method is that we can only test a finite number of <em>name</em> values, instead of all the possible strings.</p>
+          <p>This use case is parametrized by a string <em>name</em>. To validate the use case, we could write a test program interacting with <code>your_name</code>, answering the <em>name</em> string to the <code>read_line</code> request and checking that the program outputs are as expected. The limitation of this method is that we can only test a finite number of <em>name</em> values, instead of all the possible strings.</p>
 
           <h3>Runs</h3>
           <p>To cover all the use case instances, <a href="http://coq.io/">Coq.io</a> introduces the notion of <em>run</em>. A run describes one execution of a computation, by programming the behavior of the computation's environment in a particular execution. Said otherwise, a run contains two programs: the computation itself and its environment, with typing rules ensuring that the environment answers to each request of the computation.</p>
