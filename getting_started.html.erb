@@ -9,7 +9,9 @@
             <li><a href="#effects">The effects system</a></li>
             <li><a href="#use-cases">Verification by use cases</a></li>
           </ul>
-          <p>To install the <a href="http://coq.io/">Coq.io</a> library, enable the <a href="https://github.com/coq/repo-stable">repo-stable</a> OPAM repository and run:</p>
+          <p>To install the <a href="http://coq.io/">Coq.io</a> library, enable the Coq OPAM repository:</p>
+          <pre>opam repo add coq-released https://coq.inria.fr/opam/released</pre>
+          <p>and run:</p>
           <pre>opam install -j4 -v coq:io:system</pre>
           This will install the main library <a href="https://github.com/coq-io/io"><code>coq:io</code></a> and some basic effects <a href="https://github.com/coq-io/system"><code>coq:io:system</code></a> to interact with your operating system.
 
