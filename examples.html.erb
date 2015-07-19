@@ -1,0 +1,25 @@
+<%= header(:examples) %>
+      <div class="row">
+        <div class="col-md-12">
+          <h1>Examples</h1>
+          <h2>OPAM website</h2>
+          <p>The <a href="opam/">Coq OPAM website</a> is an online list of the Coq packages. It is generated using <a href="https://github.com/coq-io/opam-website">coq-io/opam-website</a>, which calls <a href="http://opam.ocamlpro.com/">OPAM</a> commands to get the details of each package.</p>
+
+          <h2>ChickBlog</h2>
+          <p><a href="https://github.com/clarus/coq-chick-blog">ChickBlog</a> was a research blog system which helped to design the <a href=".">Coq.io</a> library. See the comments on <a href="https://news.ycombinator.com/item?id=9037115">Hacker News</a>, <a href="https://www.reddit.com/r/programming/comments/2vn3xa/a_blog_engine_written_and_proven_in_coq/">Reddit</a> and <a href="https://lobste.rs/s/7ugonf/a_blog_engine_written_and_proven_in_coq/comments/4oholx">Lobsters</a>.</p>
+          <div id="disqus_thread"></div>
+          <script type="text/javascript">
+              /* * * CONFIGURATION VARIABLES * * */
+              var disqus_shortname = 'coq-io';
+
+              /* * * DON'T EDIT BELOW THIS LINE * * */
+              (function() {
+                  var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+                  dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+                  (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+              })();
+          </script>
+          <noscript>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript" rel="nofollow">comments powered by Disqus.</a></noscript>
+        </div>
+      </div>
+<%= footer %>
