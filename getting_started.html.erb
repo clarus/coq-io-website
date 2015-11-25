@@ -12,8 +12,8 @@
           <p>To install the <a href="http://coq.io/">Coq.io</a> library, enable the Coq OPAM repository:</p>
           <pre>opam repo add coq-released https://coq.inria.fr/opam/released</pre>
           <p>and run:</p>
-          <pre>opam install -j4 -v coq:io:system</pre>
-          This will install the main library <a href="https://github.com/coq-io/io"><code>coq:io</code></a> and some basic effects <a href="https://github.com/coq-io/system"><code>coq:io:system</code></a> to interact with your operating system.
+          <pre>opam install -j4 -v coq-io-system</pre>
+          This will install the main library <a href="https://github.com/coq-io/io"><code>coq-io</code></a> and some basic effects <a href="https://github.com/coq-io/system"><code>coq-io-system</code></a> to interact with your operating system.
 
           <h2 id="hello-world">Write a Hello World</h2>
           Open your favorite <a href="https://coq.inria.fr/">Coq</a> editor and type:
@@ -39,7 +39,7 @@ Extraction "extraction/main" main.</pre>
           <p>This should display <code>Hello world!</code> on the terminal.</p>
 
           <h2 id="examples">More examples</h2>
-          <p>The full documentation of the <a href="https://github.com/coq-io/system"><code>coq:io:system</code></a> library is available on <a href="http://coq-io.github.io/doc/system/2.3.0/toc.html">v2.3.0</a>.</p>
+          <p>The full documentation of the <a href="https://github.com/coq-io/system"><code>coq-io-system</code></a> library is available on <a href="http://coq-io.github.io/doc/system/2.3.0/toc.html">v2.3.0</a>.</p>
 
           <h3>Your name</h3>
           <p>The following program reads a name on the command-line and answers "hello" to this name:</p>
@@ -249,7 +249,7 @@ Run.t
       | Some name1 => log (LString.s "Hello " ++ name1 ++ LString.s "!")
       | None => ret tt
       end) tt</pre>
-          <p>The library <a href="https://github.com/coq-io/system"><code>coq:io:system</code></a> provides a run <code>Run.log_ok</code> for the logging of a string <code>s</code>. This run executes the computation <code>System.log s</code> checking that the printed string is <code>s</code>. We apply this run:</p>
+          <p>The library <a href="https://github.com/coq-io/system"><code>coq-io-system</code></a> provides a run <code>Run.log_ok</code> for the logging of a string <code>s</code>. This run executes the computation <code>System.log s</code> checking that the printed string is <code>s</code>. We apply this run:</p>
           <pre>apply (Run.log_ok (LString.s "What is your name?")).</pre>
           <p>and get one remaining goal:</p>
           <pre>1 subgoals
